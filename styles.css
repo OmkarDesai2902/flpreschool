@@ -431,6 +431,15 @@ nav ul li a:hover::after {
     transform: scale(1.2);
 }
 
+.admin-link {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.text-center {
+    text-align: center;
+}
+
 /* Testimonials Section */
 .testimonials {
     background-color: white;
