@@ -38,14 +38,165 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Gallery Carousel
-    const slides = document.querySelectorAll('.carousel-slide');
-    const dots = document.querySelectorAll('.dot');
-    const prevSlideButton = document.getElementById('prev-slide');
-    const nextSlideButton = document.getElementById('next-slide');
     const carouselContainer = document.querySelector('.carousel-container');
+    const dotsContainer = document.querySelector('.carousel-dots');
     let currentSlide = 0;
     let isMobile = window.innerWidth <= 768;
     let autoRotateInterval;
+    let slides = [];
+    let dots = [];
+    
+    // Load gallery images from localStorage or use default ones
+    // Make this function globally accessible
+    window.loadGalleryImages = function() {
+        if (carouselContainer && dotsContainer) {
+            // Initialize gallery with default images if not already done
+            initializeGalleryIfNeeded();
+            
+            const galleryImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+            
+            // Clear existing slides
+            carouselContainer.innerHTML = '';
+            dotsContainer.innerHTML = '';
+            
+            if (galleryImages.length === 0) {
+                console.warn('No gallery images found in localStorage');
+                return;
+            }
+            
+            // Create new slides from saved images
+            galleryImages.forEach((image, index) => {
+                // Create slide
+                const slide = document.createElement('div');
+                slide.className = 'carousel-slide';
+                if (index === 0 && !isMobile) {
+                    slide.classList.add('active');
+                }
+                
+                // Create image
+                const img = document.createElement('img');
+                img.src = image.src;
+                img.alt = image.alt || image.title;
+                
+                // Handle image loading errors
+                img.onerror = function() {
+                    console.error('Failed to load image:', image.src);
+                    this.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
+                };
+                
+                // Append to carousel
+                slide.appendChild(img);
+                carouselContainer.appendChild(slide);
+                
+                // Create dot
+                const dot = document.createElement('span');
+                dot.className = 'dot';
+                dot.setAttribute('data-slide', index);
+                if (index === 0) {
+                    dot.classList.add('active');
+                }
+                dotsContainer.appendChild(dot);
+            });
+            
+            // Update slides and dots references
+            slides = document.querySelectorAll('.carousel-slide');
+            dots = document.querySelectorAll('.dot');
+            
+            // Add event listeners to dots
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', function() {
+                    showSlide(index);
+                });
+            });
+            
+            console.log('Gallery loaded with', galleryImages.length, 'images');
+        }
+    }
+    
+    // Initialize gallery with default images if not already done
+    // Make this function globally accessible
+    window.initializeGalleryIfNeeded = function() {
+        if (localStorage.getItem('galleryInitialized') !== 'true') {
+            console.log('Initializing gallery with default images');
+            
+            // Default images from the images folder
+            const defaultImages = [
+                {
+                    src: 'images/WhatsApp Image 2025-07-26 at 9.38.03 PM.jpeg',
+                    title: 'Children Playing',
+                    alt: 'Children Playing'
+                },
+                {
+                    src: 'images/WhatsApp Image 2025-07-26 at 9.38.03 PM (1).jpeg',
+                    title: 'Preschool Activity',
+                    alt: 'Preschool Activity'
+                },
+                {
+                    src: 'images/WhatsApp Image 2025-07-26 at 9.38.04 PM.jpeg',
+                    title: 'Nursery Program',
+                    alt: 'Nursery Program'
+                },
+                {
+                    src: 'images/WhatsApp Image 2025-07-26 at 9.38.04 PM (1).jpeg',
+                    title: 'Senior KG',
+                    alt: 'Senior KG'
+                },
+                {
+                    src: 'images/WhatsApp Image 2025-07-26 at 9.38.05 PM.jpeg',
+                    title: 'Junior KG',
+                    alt: 'Junior KG'
+                },
+                {
+                    src: 'images/WhatsApp Image 2025-07-26 at 9.38.06 PM.jpeg',
+                    title: 'Children Playing',
+                    alt: 'Children Playing'
+                },
+                {
+                    src: 'images/WhatsApp Image 2025-07-26 at 9.38.06 PM (1).jpeg',
+                    title: 'Art Class',
+                    alt: 'Art Class'
+                },
+                {
+                    src: 'images/WhatsApp Image 2025-07-26 at 9.33.36 PM.jpeg',
+                    title: 'Outdoor Activities',
+                    alt: 'Outdoor Activities'
+                }
+            ];
+            
+            // Add IDs to default images
+            const galleryImages = defaultImages.map(img => ({
+                ...img,
+                id: 'default-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9)
+            }));
+            
+            // Save to localStorage
+            localStorage.setItem('galleryImages', JSON.stringify(galleryImages));
+            localStorage.setItem('galleryInitialized', 'true');
+            
+            console.log('Gallery initialized with', galleryImages.length, 'default images');
+        }
+    }
+    
+    // Call loadGalleryImages on page load
+    loadGalleryImages();
+    
+    // Check for gallery updates from admin panel
+    let lastGalleryUpdate = localStorage.getItem('galleryUpdated') || '0';
+    
+    // Check every 5 seconds if there are gallery updates from the admin panel
+    setInterval(function() {
+        const currentUpdate = localStorage.getItem('galleryUpdated') || '0';
+        if (currentUpdate !== lastGalleryUpdate) {
+            console.log('Gallery update detected, refreshing gallery');
+            lastGalleryUpdate = currentUpdate;
+            loadGalleryImages();
+        }
+    }, 5000);
+    
+    const prevSlideButton = document.getElementById('prev-slide');
+    const nextSlideButton = document.getElementById('next-slide');
+    slides = document.querySelectorAll('.carousel-slide');
+    dots = document.querySelectorAll('.dot');
     
     if (slides.length > 0) {
         // Check if mobile or desktop
