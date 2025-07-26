@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Future Leaders Preschool</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <div id="login-section" class="admin-section">
+            <h2>Admin Login</h2>
+            <div class="admin-form">
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter admin password">
+                </div>
+                <button id="login-btn" class="btn">Login</button>
+                <p id="login-error" class="error-message"></p>
+            </div>
+        </div>
+
+        <div id="admin-panel" class="admin-section hidden">
+            <h2>Gallery Management</h2>
+            <div class="admin-tabs">
+                <button class="tab-btn active" data-tab="upload">Upload Images</button>
+                <button class="tab-btn" data-tab="manage">Manage Gallery</button>
+                <button id="logout-btn" class="btn btn-sm">Logout</button>
+            </div>
+
+            <div id="upload-section" class="tab-content">
+                <h3>Upload New Images</h3>
+                <form id="upload-form" class="admin-form">
+                    <div class="form-group">
+                        <label for="image-file">Select Image</label>
+                        <input type="file" id="image-file" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label for="image-title">Image Title</label>
+                        <input type="text" id="image-title" placeholder="Enter image title">
+                    </div>
+                    <button type="submit" class="btn">Upload Image</button>
+                </form>
+                <div id="upload-status" class="status-message"></div>
+            </div>
+
+                            <div id="manage-section" class="tab-content hidden">
+                    <h3>Manage Gallery Images</h3>
+                    <p class="help-text">Drag and drop images to reorder. Click the trash icon to remove an image.</p>
+                    <div id="gallery-items" class="sortable-gallery">
+                        <!-- Gallery items will be loaded here -->
+                    </div>
+                    <div class="button-group">
+                        <button id="save-order-btn" class="btn">Save Order</button>
+                        <button id="reset-gallery-btn" class="btn btn-secondary">Reset to Default Images</button>
+                    </div>
+                    <div id="manage-status" class="status-message"></div>
+                </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html> 
