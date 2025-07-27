@@ -37,17 +37,139 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Gallery Carousel
-    const slides = document.querySelectorAll('.carousel-slide');
-    const dots = document.querySelectorAll('.dot');
+    // Dynamic Gallery Carousel
+    const dynamicCarousel = document.getElementById('dynamic-carousel');
+    const carouselDots = document.getElementById('carousel-dots');
     const prevSlideButton = document.getElementById('prev-slide');
     const nextSlideButton = document.getElementById('next-slide');
-    const carouselContainer = document.querySelector('.carousel-container');
     let currentSlide = 0;
-    let isMobile = window.innerWidth <= 768;
+    let slides = [];
     let autoRotateInterval;
+    let isMobile = window.innerWidth <= 768;
     
-    if (slides.length > 0) {
+    // Function to load gallery images
+    function loadGalleryImages() {
+        if (dynamicCarousel) {
+            // Clear any existing content
+            dynamicCarousel.innerHTML = '';
+            
+            // Get gallery images from localStorage (these are Cloudinary references)
+            const galleryImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+            
+            if (galleryImages && galleryImages.length > 0) {
+                // Process the Cloudinary images
+                processGalleryImages(galleryImages);
+            } else {
+                console.error('No gallery images found');
+                // Show a message in the gallery if no images are found
+                dynamicCarousel.innerHTML = '<div class="no-images-message">No gallery images found</div>';
+                
+                // Hide carousel controls if there are no images
+                const carouselControls = document.querySelector('.carousel-controls');
+                if (carouselControls) {
+                    carouselControls.style.display = 'none';
+                }
+            }
+        }
+    }
+    
+    // Function to optimize Cloudinary images for the carousel
+    function getOptimizedCloudinaryUrl(imageUrl, width = 1200, height = 800, quality = 'auto') {
+        // Check if it's a Cloudinary URL
+        if (imageUrl.includes('cloudinary.com')) {
+            // Parse the URL to extract components
+            try {
+                const urlParts = imageUrl.split('/upload/');
+                if (urlParts.length === 2) {
+                    // Insert transformation parameters
+                    return `${urlParts[0]}/upload/w_${width},h_${height},c_fill,q_${quality}/${urlParts[1]}`;
+                }
+            } catch (error) {
+                console.error('Error optimizing Cloudinary URL:', error);
+            }
+        }
+        
+        // Return original URL if not a Cloudinary URL or if parsing fails
+        return imageUrl;
+    }
+    
+    // Function to process gallery images and create carousel
+    function processGalleryImages(galleryImages) {
+        if (!galleryImages || galleryImages.length === 0) {
+            console.error('No gallery images found');
+            dynamicCarousel.innerHTML = '<div class="no-images-message">No gallery images found</div>';
+            
+            // Hide carousel controls if there are no images
+            const carouselControls = document.querySelector('.carousel-controls');
+            if (carouselControls) {
+                carouselControls.style.display = 'none';
+            }
+            return;
+        }
+        
+        // Show carousel controls
+        const carouselControls = document.querySelector('.carousel-controls');
+        if (carouselControls) {
+            carouselControls.style.display = 'flex';
+        }
+        
+        // Create slides for each image
+        galleryImages.forEach((image, index) => {
+            const slide = document.createElement('div');
+            slide.className = 'carousel-slide';
+            if (index === 0 && !isMobile) {
+                slide.classList.add('active');
+            }
+            
+            const img = document.createElement('img');
+            // Use optimized Cloudinary URL if available
+            img.src = getOptimizedCloudinaryUrl(image.src);
+            img.alt = image.alt || image.title || 'Gallery Image';
+            
+            // Add error handling for images
+            img.onerror = function() {
+                this.onerror = null;
+                // Use a data URI for the placeholder image instead of an external file
+                this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22300%22%20height%3D%22200%22%20fill%3D%22%23cccccc%22%3E%3C%2Frect%3E%3Ctext%20x%3D%22150%22%20y%3D%22100%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%23333333%22%3EImage%20not%20found%3C%2Ftext%3E%3C%2Fsvg%3E';
+                this.alt = 'Image not found';
+            };
+            
+            // Add loading attribute for better performance
+            img.loading = 'lazy';
+            
+            slide.appendChild(img);
+            dynamicCarousel.appendChild(slide);
+        });
+        
+        // Create dots for each slide
+        if (carouselDots) {
+            carouselDots.innerHTML = '';
+            
+            galleryImages.forEach((_, index) => {
+                const dot = document.createElement('span');
+                dot.className = 'dot';
+                if (index === 0) {
+                    dot.classList.add('active');
+                }
+                dot.setAttribute('data-slide', index);
+                
+                dot.addEventListener('click', function() {
+                    showSlide(index);
+                });
+                
+                carouselDots.appendChild(dot);
+            });
+        }
+        
+        // Get all slides after they've been created
+        slides = document.querySelectorAll('.carousel-slide');
+        
+        // Initialize the carousel
+        initCarousel();
+    }
+    
+    // Function to initialize carousel
+    function initCarousel() {
         // Check if mobile or desktop
         function checkDevice() {
             isMobile = window.innerWidth <= 768;
@@ -62,12 +184,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Update dots based on scroll position
-                if (carouselContainer) {
-                    carouselContainer.addEventListener('scroll', function() {
-                        const scrollPosition = carouselContainer.scrollLeft;
-                        const slideWidth = carouselContainer.offsetWidth;
+                if (dynamicCarousel) {
+                    dynamicCarousel.addEventListener('scroll', function() {
+                        const scrollPosition = dynamicCarousel.scrollLeft;
+                        const slideWidth = dynamicCarousel.offsetWidth;
                         const currentIndex = Math.round(scrollPosition / slideWidth);
                         
+                        const dots = document.querySelectorAll('.dot');
                         dots.forEach((dot, index) => {
                             dot.classList.toggle('active', index === currentIndex);
                         });
@@ -84,56 +207,66 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Start auto-rotation for desktop
-                if (!autoRotateInterval) {
-                    autoRotateInterval = setInterval(function() {
-                        if (!isMobile) {
-                            currentSlide = (currentSlide + 1) % slides.length;
-                            showSlide(currentSlide);
-                        }
-                    }, 5000);
-                }
+                startAutoRotation();
             }
         }
         
-        // Function to show a specific slide (for desktop)
+        // Function to show a specific slide
         function showSlide(index) {
+            if (!slides || slides.length === 0) return;
+            
+            // Make sure index is within bounds
+            index = Math.max(0, Math.min(index, slides.length - 1));
+            
             if (!isMobile) {
                 slides.forEach(slide => slide.classList.remove('active'));
+                const dots = document.querySelectorAll('.dot');
                 dots.forEach(dot => dot.classList.remove('active'));
                 
                 slides[index].classList.add('active');
-                dots[index].classList.add('active');
+                if (dots[index]) dots[index].classList.add('active');
                 currentSlide = index;
             } else {
                 // For mobile, scroll to the slide
-                if (carouselContainer) {
-                    carouselContainer.scrollTo({
-                        left: index * carouselContainer.offsetWidth,
+                if (dynamicCarousel) {
+                    dynamicCarousel.scrollTo({
+                        left: index * dynamicCarousel.offsetWidth,
                         behavior: 'smooth'
                     });
                 }
             }
         }
         
-        // Event listeners for navigation buttons (desktop only)
+        // Function to start auto-rotation
+        function startAutoRotation() {
+            if (autoRotateInterval) {
+                clearInterval(autoRotateInterval);
+            }
+            
+            if (slides.length <= 1) return; // Don't rotate if there's only one slide
+            
+            autoRotateInterval = setInterval(function() {
+                if (!isMobile) {
+                    currentSlide = (currentSlide + 1) % slides.length;
+                    showSlide(currentSlide);
+                }
+            }, 5000);
+        }
+        
+        // Event listeners for navigation buttons
         if (prevSlideButton && nextSlideButton) {
             prevSlideButton.addEventListener('click', function() {
+                if (!slides || slides.length === 0) return;
                 currentSlide = (currentSlide - 1 + slides.length) % slides.length;
                 showSlide(currentSlide);
             });
             
             nextSlideButton.addEventListener('click', function() {
+                if (!slides || slides.length === 0) return;
                 currentSlide = (currentSlide + 1) % slides.length;
                 showSlide(currentSlide);
             });
         }
-        
-        // Event listeners for dots (works on both mobile and desktop)
-        dots.forEach((dot, index) => {
-            dot.addEventListener('click', function() {
-                showSlide(index);
-            });
-        });
         
         // Initial setup
         checkDevice();
@@ -141,6 +274,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update on window resize
         window.addEventListener('resize', checkDevice);
     }
+    
+    // Listen for gallery updates from localStorage
+    window.addEventListener('storage', function(event) {
+        if (event.key === 'galleryUpdated') {
+            console.log('Gallery updated in another tab, refreshing...');
+            loadGalleryImages();
+        }
+    });
+    
+    // Load gallery images when the page loads
+    loadGalleryImages();
     
     // Testimonial Slider
     const testimonials = document.querySelectorAll('.testimonial');
@@ -201,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const message = document.getElementById('message').value;
             
             // Create WhatsApp message
-            const whatsappNumber = "+917798894404";
+            const whatsappNumber = "+917350170520";
             
             // Get the program from the select element
             const childAgeSelect = document.getElementById('child-age');
